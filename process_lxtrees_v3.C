@@ -157,6 +157,10 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
         std::vector<int> ntracks_per_hits_backgr_ecut(ntracklayers, 0);
         std::vector<int> ntracks_per_hits_signal_zcut(ntracklayers, 0);
         std::vector<int> ntracks_per_hits_backgr_zcut(ntracklayers, 0);
+        std::vector<int> trackPdgIds, trackTrackIds;
+        std::vector<std::string> trackEnergies, trackVertices;
+        trackPdgIds.clear(); trackTrackIds.clear(); trackEnergies.clear(); trackVertices.clear();
+        
         //loop on hit tracks
         for (int trkid : tridlist) {
           const auto titr = std::find(htrcks.trackid.begin(), htrcks.trackid.end(), trkid);
@@ -164,10 +168,25 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
             throw std::logic_error("Track not found in HitTracks tree!"); 
           }
           int vndx = titr - htrcks.trackid.begin();
+          std::string vertexStream = Form("(%.3f,%.3f,%.3f)", htrcks.vtxx.at(vndx), htrcks.vtxy.at(vndx), htrcks.vtxz.at(vndx));
+          trackVertices.push_back(vertexStream);
+          
+          //if(htrcks.vtxx.at(vndx) < 0 && (htrcks.vtxz.at(vndx) > 3600 && htrcks.vtxz.at(vndx) < 4600))continue;
           lhist->FillHistW("tracking_planes_hit_track_e", layer_id, htrcks.E.at(vndx), ev_weight);
           lhist->FillHistW("tracking_planes_hit_track_proc", layer_id, htrcks.pproc.at(vndx), ev_weight);
           lhist->FillHistW("tracking_planes_hit_track_pdg", layer_id, htrcks.pdg.at(vndx), ev_weight);
-          hitFile << bxNumber << " " << htrcks.pdg.at(vndx) << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << htrcks.trackid.at(vndx) << std::endl;
+//           int bxNumber = 1;
+//           hitFile << bxNumber << " " << htrcks.pdg.at(vndx) << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << htrcks.trackid.at(vndx) << std::endl;
+          trackPdgIds.push_back(htrcks.pdg.at(vndx));
+          trackTrackIds.push_back(htrcks.trackid.at(vndx));
+          
+//           stringstream energyStream;
+//           energyStream << htrcks.E.at(vndx) << std::scientific;
+//           double energyVal=-999.0;
+//           energyStream >> energyVal;
+          
+          std::string energyVal = Form("%.5e",htrcks.E.at(vndx));
+          trackEnergies.push_back(energyVal);
           
           if ( abs(htrcks.vtxz.at(vndx)-trzv[0]) > 0.025 ) {
             lhist->FillHistW("tracking_planes_hit_track_e_zcut", layer_id, htrcks.E.at(vndx), ev_weight);
@@ -184,6 +203,29 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
 //             }
           }
         }
+        /// remove any track coming from cerenkov or lanex
+        if(trackPdgIds.size()==0)continue;
+        std::string pdgIdString = "[", energyString = "[", trackIdString = "[", vertexString = "[";        
+        for(size_t numberTracks = 0; numberTracks < trackPdgIds.size(); numberTracks++){
+            pdgIdString   += std::to_string(trackPdgIds.at(numberTracks))+",";
+            energyString  += trackEnergies.at(numberTracks)+",";
+            trackIdString += std::to_string(trackTrackIds.at(numberTracks))+",";
+            vertexString  += trackVertices.at(numberTracks)+",";
+        }
+        pdgIdString = pdgIdString.substr(0, pdgIdString.size()-1);
+        pdgIdString   += "]";
+        
+        energyString = energyString.substr(0, energyString.size()-1);
+        energyString  += "]";
+        
+        trackIdString = trackIdString.substr(0, trackIdString.size()-1);
+        trackIdString += "]";
+        
+        vertexString = vertexString.substr(0, vertexString.size()-1);
+        vertexString += "]";
+        
+        hitFile << bxNumber << " " << hit.hitid << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << pdgIdString << " " << energyString << " " << trackIdString << " " << vertexString << std::endl;
+        
       }
       
 //       //ECAL

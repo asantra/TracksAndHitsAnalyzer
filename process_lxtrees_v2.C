@@ -65,7 +65,7 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
   ofstream hitFile;
   textoutname += std::string("_HitsProperInfo") + std::string(".txt");
   hitFile.open(textoutname);
-  hitFile << "###bxNumber << hit_id << layer_id << det_id << e_dep << ev_weight << cell_x << cell_y << [pdgids] << [energies] << [trackids]" << std::endl;
+  hitFile << "###bxNumber << hit_id << layer_id << det_id << e_dep << ev_weight << cell_x << cell_y << [pdgids] << [energies] << [trackids] << [(vx1,vy1,vz1)]" << std::endl;
   
   
   MHists *lhist = new MHists();
@@ -143,7 +143,7 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
         lhist->FillHistW("tracking_planes_hits_xy", detlayer, hit.cellx, hit.celly, ev_weight);
         lhist->FillHistW("tracking_planes_hits_xy_edep", detlayer, hit.cellx, hit.celly, hit.edep*ev_weight);
         
-        lhist->FillHistW("tracking_planes_n_tracks_per_hit", layer_id, tridlist.size(), ev_weight);
+        
 //         if (primpdg==-11) {
 //           lhist->FillHistW("tracking_planes_n_tracks_per_hit_signal", layer_id, tridlist.size(), ev_weight);
 //           ntracker_hits_signal[layer_id] += 1;
@@ -159,9 +159,9 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
         std::vector<int> ntracks_per_hits_signal_zcut(ntracklayers, 0);
         std::vector<int> ntracks_per_hits_backgr_zcut(ntracklayers, 0);
         std::vector<int> trackPdgIds, trackTrackIds;
-        std::vector<std::string> trackEnergies;
-        trackPdgIds.clear(); trackTrackIds.clear(); trackEnergies.clear();
-        
+        std::vector<std::string> trackEnergies, trackVertices;
+        trackPdgIds.clear(); trackTrackIds.clear(); trackEnergies.clear(); trackVertices.clear();
+        int trackNumber = 0;
         //loop on hit tracks
         for (int trkid : tridlist) {
           const auto titr = std::find(htrcks.trackid.begin(), htrcks.trackid.end(), trkid);
@@ -169,7 +169,14 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
             throw std::logic_error("Track not found in HitTracks tree!"); 
           }
           int vndx = titr - htrcks.trackid.begin();
-          if(htrcks.vtxx.at(vndx) < 0 && (htrcks.vtxz.at(vndx) > 3600 && htrcks.vtxz.at(vndx) < 4600))continue;
+          std::string vertexStream = Form("(%.3f,%.3f,%.3f)", htrcks.vtxx.at(vndx), htrcks.vtxy.at(vndx), htrcks.vtxz.at(vndx));
+          trackVertices.push_back(vertexStream);
+          
+          /// remove the hotspot region
+          if(!((htrcks.vtxz.at(vndx) > 3800 && htrcks.vtxz.at(vndx) < 6500) && htrcks.vtxx.at(vndx) < -25))
+             trackNumber++;
+          
+          //if(htrcks.vtxx.at(vndx) < 0 && (htrcks.vtxz.at(vndx) > 3600 && htrcks.vtxz.at(vndx) < 4600))continue;
           lhist->FillHistW("tracking_planes_hit_track_e", layer_id, htrcks.E.at(vndx), ev_weight);
           lhist->FillHistW("tracking_planes_hit_track_proc", layer_id, htrcks.pproc.at(vndx), ev_weight);
           lhist->FillHistW("tracking_planes_hit_track_pdg", layer_id, htrcks.pdg.at(vndx), ev_weight);
@@ -201,14 +208,17 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
 //             }
           }
         }
+        /// fill only when the tracks are not from the background hotspots
+        lhist->FillHistW("tracking_planes_n_tracks_per_hit", detlayer, trackNumber, ev_weight);
         /// remove any track coming from cerenkov or lanex
         if(trackPdgIds.size()==0)continue;
         int bxNumber = 1;
-        std::string pdgIdString = "[", energyString = "[", trackIdString = "[";        
+        std::string pdgIdString = "[", energyString = "[", trackIdString = "[", vertexString = "[";        
         for(size_t numberTracks = 0; numberTracks < trackPdgIds.size(); numberTracks++){
             pdgIdString   += std::to_string(trackPdgIds.at(numberTracks))+",";
             energyString  += trackEnergies.at(numberTracks)+",";
             trackIdString += std::to_string(trackTrackIds.at(numberTracks))+",";
+            vertexString  += trackVertices.at(numberTracks)+",";
         }
         pdgIdString = pdgIdString.substr(0, pdgIdString.size()-1);
         pdgIdString   += "]";
@@ -218,7 +228,11 @@ int process_hits_tree_draw(const char *fnlist = 0, const char *commentstr = 0)
         
         trackIdString = trackIdString.substr(0, trackIdString.size()-1);
         trackIdString += "]";
-        hitFile << bxNumber << " " << hit.hitid << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << pdgIdString << " " << energyString << " " << trackIdString << std::endl;
+        
+        vertexString = vertexString.substr(0, vertexString.size()-1);
+        vertexString += "]";
+        
+        hitFile << bxNumber << " " << hit.hitid << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << pdgIdString << " " << energyString << " " << trackIdString << " " << vertexString << std::endl;
         
       }
       
@@ -370,7 +384,7 @@ void CreateHistograms(MHists *mh)
   mh->AddHists("tracking_planes_hits_xy", ndet, npixx, 0.0, npixx, npixy, 0.0, npixy);
   mh->AddHists("tracking_planes_hits_xy_edep", ndet, npixx, 0.0, npixx, npixy, 0.0, npixy);
   
-  mh->AddHists("tracking_planes_n_tracks_per_hit", nlayers, 100, 0.0, 100.0);
+  mh->AddHists("tracking_planes_n_tracks_per_hit", ndet, 1000, 0.0, 10000.0);
 //   mh->AddHists("tracking_planes_n_tracks_per_hit_signal", nlayers, 100, 0.0, 100.0);
 //   mh->AddHists("tracking_planes_n_tracks_per_hit_background", nlayers, 100, 0.0, 100.0);
         
