@@ -424,10 +424,10 @@ int ProcessLxSim::ReadNextEvent()
   counthits = ReadNextHitEvent();
   counthtracks = ReadNextHitTrackEvent();
   // comment out by Arka
-//   if (fEventHitTrackId != fEventId) {
-//     std::cout << "Hits and HitTracks seem to be not synchronized!\n";
-//     return 0;
-//   }
+  if (fEventHitTrackId != fEventId) {
+    std::cout << "Hits and HitTracks seem to be not synchronized!\n";
+    return 0;
+  }
   
   int counttrks;
   while(fEventTrackId != fEventId) {
@@ -436,10 +436,10 @@ int ProcessLxSim::ReadNextEvent()
 //     std::cout << "Reading Tracks. Event: " <<  fEventTrackId << " Number of tracks: " << fTracks.size() << std::endl;
   }
   // comment out by Arka
-//   if (fEventHitTrackId != fEventId) {
-//     std::cout << "Hits and Tracks seem to be not synchronized!\n";
-//     return 0;
-//   }
+  if (fEventHitTrackId != fEventId) {
+    std::cout << "Hits and Tracks seem to be not synchronized!\n";
+    return 0;
+  }
   
   return counthits + counthtracks;
 }
