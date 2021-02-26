@@ -12,7 +12,7 @@ import argparse
 
 def main():
     inFile  = open(sys.argv[1])
-    outFile = open("gPlusLaserNewBkgSamples.txt", "w")
+    outFile = open("ePlusLaserNewBkgSamples.txt", "w")
     totalNumber = 0
     for lines in inFile.readlines():
         lines        = lines.rstrip()
@@ -29,6 +29,8 @@ def main():
             
             i = int(totalNumber) // 1500000000
             print("The division = ", i)
+            if(i>50):
+                break
             #outFile1 = open("gPlusLaserBkgNewSamples_DividedByBX"+str(i+1)+".txt", "a")
             outFile.write(lines+"\n")
         except:
