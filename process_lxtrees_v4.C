@@ -37,6 +37,125 @@ int ProcessList(const std::string &fnamelist, std::vector<std::string> &flist);
 void CreateHistograms(MHists *mh);
 
 
+double getZPosition(int layerId){
+    double z = -999.0;
+    switch(layerId){
+        case 0:
+            z = 3864.5125;
+            break;
+        case 1:
+            z = 3876.5125;
+            break;
+        case 2:
+            z = 3964.5125;
+            break;
+        case 3:
+            z = 3976.5125;
+            break;
+        case 4:
+            z = 4064.5125;
+            break;
+        case 5:
+            z = 4076.5125;
+            break;
+        case 6:
+            z = 4164.5125;
+            break;
+        case 7:
+            z = 4176.5125;
+            break;
+        case 8:
+            z = 3864.5125;
+            break;
+        case 9:
+            z = 3876.5125;
+            break;
+        case 10:
+            z = 3964.5125;
+            break;
+        case 11:
+            z = 3976.5125;
+            break;
+        case 12:
+            z = 4064.5125;
+            break;
+        case 13:
+            z = 4076.5125;
+            break;
+        case 14:
+            z = 4164.5125;
+            break;
+        case 15:
+            z = 4176.5125;
+            break;
+        default:
+            z = 3864.5125;
+            break;
+    }
+    return z;
+}
+
+
+
+string getDetectorName(int layerId){
+    string detName = "";
+    switch(layerId){
+        case 0:
+            detName = "Stave0";
+            break;
+        case 1:
+            detName = "Stave1";
+            break;
+        case 2:
+            detName = "Stave2";
+            break;
+        case 3:
+            detName = "Stave3";
+            break;
+        case 4:
+            detName = "Stave4";
+            break;
+        case 5:
+            detName = "Stave5";
+            break;
+        case 6:
+            detName = "Stave6";
+            break;
+        case 7:
+            detName = "Stave7";
+            break;
+        case 8:
+            detName = "Stave8";
+            break;
+        case 9:
+            detName = "Stave9";
+            break;
+        case 10:
+            detName = "Stave10";
+            break;
+        case 11:
+            detName = "Stave11";
+            break;
+        case 12:
+            detName = "Stave12";
+            break;
+        case 13:
+            detName = "Stave13";
+            break;
+        case 14:
+            detName = "Stave14";
+            break;
+        case 15:
+            detName = "Stave15";
+            break;
+        default:
+            detName = "Stave1";
+            break;
+    }
+    return detName;
+}
+
+
 int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
 {
 
@@ -94,7 +213,7 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
   hitTree->Branch("x", &x, "x/D");
   hitTree->Branch("y", &y, "y/D");
   hitTree->Branch("z", &z, "z/D");
-  hitTree->Branch("detector", detector);
+  hitTree->Branch("detector", &detector);
   hitTree->Branch("pdg_code", &pdg_code, "pdg_code/I");
   hitTree->Branch("track_id", &track_id, "track_id/I");
   hitTree->Branch("parent_id", &parent_id, "parent_id/I");
@@ -158,14 +277,15 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
       const auto &trzv = hit.trackz;
       const auto &trtv = hit.trackt;
       const auto &trackedepv = hit.trackedep;
-      
       int det_id = hit.detid;
       double ev_weight = hit.weight;
+//       std::cout << "loop on hits " << std::endl;
       
       if (det_id >= 1000 && det_id <= 1008) {
         int det = det_id - 1000;
         int layer_id = hit.layerid;
         int detlayer = det * ntracklayers + layer_id;
+        std::cout << "detid " << det_id << std::endl;
         lhist->FillHistW("tracking_planes_hits_x", detlayer, hit.cellx, ev_weight);
         lhist->FillHistW("tracking_planes_hits_y", detlayer, hit.cellx, ev_weight);
         lhist->FillHistW("tracking_planes_hits_xy", detlayer, hit.cellx, hit.celly, ev_weight);
@@ -192,10 +312,13 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
         
         //loop on hit tracks
         for (int trkid : tridlist) {
-            
-          if(tridlist.size()!=trackedepv.size())continue;
-          if(tridlist.size()!=trtv.size())continue;
-          if(tridlist.size()!=htrcks.pproc.size())continue;
+          std::cout << "loop on hitTracks " << std::endl;
+          std::cout << "trdlist.size: " << tridlist.size() << std::endl;
+//           std::cout << "trackedepv.size: " << trackedepv.size() << std::endl;
+//           std::cout << "trtv.size: " << trtv.size() << std::endl;
+          //if(tridlist.size()!=trackedepv.size())continue;
+          //if(tridlist.size()!=trtv.size())continue;
+//           if(tridlist.size()!=htrcks.pproc.size())continue;
           
           
           const auto titr = std::find(htrcks.trackid.begin(), htrcks.trackid.end(), trkid);
@@ -203,29 +326,33 @@ int process_hits_tree_draw(const char *fnlist = 0, std::string bxNumber=0)
             throw std::logic_error("Track not found in HitTracks tree!"); 
           }
           int vndx = titr - htrcks.trackid.begin();
+//           std::cout << "titr: " << titr << std::endl;
+//           std::cout << "htrcks.trackid.begin() " << htrcks.trackid.begin() << endl;
+          std::cout << "vndx: " << vndx << std::endl;
+          std::cout << "htrcks.vtxx.size: " << htrcks.vtxx.size() << std::endl;
           std::string vertexStream = Form("(%.3f,%.3f,%.3f)", htrcks.vtxx.at(vndx), htrcks.vtxy.at(vndx), htrcks.vtxz.at(vndx));
           trackVertices.push_back(vertexStream);
           
           //if(htrcks.vtxx.at(vndx) < 0 && (htrcks.vtxz.at(vndx) > 3600 && htrcks.vtxz.at(vndx) < 4600))continue;
           lhist->FillHistW("tracking_planes_hit_track_e", layer_id, htrcks.E.at(vndx), ev_weight);
-          lhist->FillHistW("tracking_planes_hit_track_proc", layer_id, htrcks.pproc.at(vndx), ev_weight);
+//           lhist->FillHistW("tracking_planes_hit_track_proc", layer_id, htrcks.pproc.at(vndx), ev_weight);
           lhist->FillHistW("tracking_planes_hit_track_pdg", layer_id, htrcks.pdg.at(vndx), ev_weight);
 //           int bxNumber = 1;
 //           hitFile << bxNumber << " " << htrcks.pdg.at(vndx) << " " << layer_id << " " << det_id << " " << hit.edep << " " << ev_weight << " " << hit.cellx << " " << hit.celly << " " << htrcks.trackid.at(vndx) << std::endl;
           trackPdgIds.push_back(htrcks.pdg.at(vndx));
           trackTrackIds.push_back(htrcks.trackid.at(vndx));
           event     = std::stoi(bxNumber);
-          energy    = hit.edep;
-          time      = 10;
-          x         = hit.cellx;
-          y         = hit.celly;
-          z         = 3895;
-          string  s = "tracker0";
+          energy    = hit.trackedep.at(vndx);//trackedepv.at(vndx);
+          time      = hit.trackt.at(vndx);
+          x         = hit.cellx; //hit.cellx;
+          y         = hit.celly; //hit.celly;
+          z         = getZPosition(layer_id);
+          string  s = getDetectorName(layer_id);
           std::strcpy(detector, s.c_str());
           pdg_code  = htrcks.pdg.at(vndx);
           track_id  = htrcks.trackid.at(vndx);
           parent_id = 0;
-          
+          std::cout << event << " " << energy << " " << time << " " << x << " " << y << " " << z << " " << detector << " " << pdg_code << " " << track_id << " " << parent_id << std::endl;          
           
           hitTree->Fill();
           
