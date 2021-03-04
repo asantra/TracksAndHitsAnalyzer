@@ -26,13 +26,14 @@ public :
    std::vector<double>  trackx;
    std::vector<double>  tracky;
    std::vector<double>  trackz;
+   std::vector<double>  trackt;
+   std::vector<double>  trackedep;
    Double_t         weight;
 
    LxHits();
    LxHits(const LxHits &hit);
    virtual ~LxHits();
 };
-
 
 
 // LxHitsTree
@@ -46,6 +47,8 @@ public :
    std::vector<double>  *trackx_ptr;
    std::vector<double>  *tracky_ptr;
    std::vector<double>  *trackz_ptr;
+   std::vector<double>  *trackt_ptr;
+   std::vector<double>  *trackedep_ptr;
 
    // List of branches
    TBranch        *b_eventid;   //!
@@ -59,6 +62,8 @@ public :
    TBranch        *b_trackx;   //!
    TBranch        *b_tracky;   //!
    TBranch        *b_trackz;   //!
+   TBranch        *b_trackt;   //!
+   TBranch        *b_trackedep; //!
    TBranch        *b_weight;   //!
 
    LxHitsTree(TTree *tree=0);

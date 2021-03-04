@@ -23,13 +23,15 @@
 // LxHits
 /////////////////////////////////////////////////////////////////////////
 LxHits::LxHits(): eventid(-1), detid(0), layerid(0),
-cellx(0.0), celly(0.0), edep(0.0), hitid(0), track_list(0), trackx(0), tracky(0), trackz(0), weight(0.0)
+cellx(0.0), celly(0.0), edep(0.0), hitid(0), track_list(0), trackx(0.0), tracky(0.0), trackz(0.0), 
+trackt(0.0), trackedep(0), weight(0.0)
 {};
 
 
 LxHits::LxHits(const LxHits &hit): eventid(hit.eventid), detid(hit.detid), layerid(hit.layerid),
 cellx(hit.cellx), celly(hit.celly), edep(hit.edep), hitid(hit.hitid), 
-track_list(hit.track_list), trackx(hit.trackx), tracky(hit.tracky), trackz(hit.trackz), weight(hit.weight)
+track_list(hit.track_list), trackx(hit.trackx), tracky(hit.tracky), trackz(hit.trackz), 
+trackt(hit.trackt), trackedep(hit.trackedep), weight(hit.weight)
 {};
    
 
@@ -97,6 +99,8 @@ void LxHitsTree::Init(TTree *tree)
    trackx_ptr = &trackx;
    tracky_ptr = &tracky;
    trackz_ptr = &trackz;
+   trackt_ptr = &trackt;
+   trackedep_ptr = &trackedep;
 
    // Set branch addresses and branch pointers
    if (!tree) return;
@@ -115,6 +119,8 @@ void LxHitsTree::Init(TTree *tree)
    fChain->SetBranchAddress("trackx", &trackx_ptr, &b_trackx);
    fChain->SetBranchAddress("tracky", &tracky_ptr, &b_tracky);
    fChain->SetBranchAddress("trackz", &trackz_ptr, &b_trackz);
+   fChain->SetBranchAddress("trackt", &trackt_ptr, &b_trackt);
+   fChain->SetBranchAddress("trackedep", &trackedep_ptr, &b_trackedep);
    fChain->SetBranchAddress("weight", &weight, &b_weight);
    Notify();
 }
@@ -525,12 +531,13 @@ void ProcessLxSim::DumpEvent() const
     const auto &trxv = hit.trackx;
     const auto &tryv = hit.tracky;
     const auto &trzv = hit.trackz;
+    const auto &trtv = hit.trackt;
     std::cout << "       Tracks ID: ";
     for (int ii : tridv) std::cout << ii << "  ";
     std::cout << std::endl;
     for (size_t ii = 0; ii < trxv.size(); ++ii) {
-      std::cout << "  x/y/z: " << trxv.at(ii)
-                << "  " << tryv.at(ii) << "  " << trzv.at(ii) << std::endl;
+      std::cout << "  x/y/z/t: " << trxv.at(ii)
+                << "  " << tryv.at(ii) << "  " << trzv.at(ii)  << "  " << trtv.at(ii) << std::endl;
     }
   }
 
